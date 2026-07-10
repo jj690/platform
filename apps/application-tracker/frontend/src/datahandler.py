@@ -60,7 +60,7 @@ class DataHandler:
     @staticmethod
     def save_changes(df: pd.DataFrame):
         df = df.copy()
-
+        df.sort_values(by="id", inplace=True)
         if "date" in df.columns:
             df["date"] = (
                 pd.to_datetime(df["date"], errors="coerce", utc=True)
