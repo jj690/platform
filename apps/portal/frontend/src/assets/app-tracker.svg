@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Clipboard body -->
+  <rect x="12" y="18" width="40" height="38" rx="4" fill="rgba(56,139,253,0.2)" stroke="#388bfd" stroke-width="2"/>
+  <!-- Clip at top -->
+  <rect x="24" y="12" width="16" height="12" rx="3" fill="#388bfd"/>
+  <rect x="28" y="10" width="8" height="6" rx="2" fill="rgba(56,139,253,0.4)"/>
+  <!-- Check mark line 1 -->
+  <polyline points="20,34 26,40 36,28" stroke="#388bfd" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Text lines -->
+  <rect x="20" y="46" width="20" height="2.5" rx="1.25" fill="#388bfd" opacity="0.5"/>
+  <rect x="20" y="51" width="14" height="2.5" rx="1.25" fill="#388bfd" opacity="0.35"/>
+</svg>

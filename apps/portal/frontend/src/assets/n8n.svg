@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Nodes -->
+  <circle cx="32" cy="12" r="6" fill="#3fb950" opacity="0.9"/>
+  <circle cx="12" cy="44" r="6" fill="#3fb950" opacity="0.9"/>
+  <circle cx="52" cy="44" r="6" fill="#3fb950" opacity="0.9"/>
+  <!-- Edges -->
+  <line x1="32" y1="18" x2="15" y2="39" stroke="#3fb950" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <line x1="32" y1="18" x2="49" y2="39" stroke="#3fb950" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <line x1="18" y1="44" x2="46" y2="44" stroke="#3fb950" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <!-- Arrow tips on edges -->
+  <circle cx="32" cy="12" r="3" fill="#0d1117"/>
+  <circle cx="12" cy="44" r="3" fill="#0d1117"/>
+  <circle cx="52" cy="44" r="3" fill="#0d1117"/>
+</svg>

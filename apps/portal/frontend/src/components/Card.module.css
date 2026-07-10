@@ -1,0 +1,146 @@
+.link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+    height: 100%;
+}
+
+.link:hover .card {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.placeholder {
+    opacity: 0.45;
+    border-style: dashed;
+}
+
+/* Banner image area */
+.banner {
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.banner.blue {
+    background: rgba(56, 139, 253, 0.12);
+}
+
+.banner.purple {
+    background: rgba(139, 92, 246, 0.12);
+}
+
+.banner.orange {
+    background: rgba(251, 146, 60, 0.12);
+}
+
+.banner.green {
+    background: rgba(63, 185, 80, 0.12);
+}
+
+.banner.gray {
+    background: rgba(139, 148, 158, 0.08);
+}
+
+.image {
+    width: 64px;
+    height: 64px;
+}
+
+/* Text */
+.body {
+    padding: 1rem 1.25rem 0.75rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.title {
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.description {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+/* Footer */
+.footer {
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+}
+
+.badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2em 0.65em;
+    border-radius: 999px;
+    letter-spacing: 0.03em;
+}
+
+.badge.active {
+    background: rgba(63, 185, 80, 0.15);
+    color: var(--success);
+}
+
+.badge.soon {
+    background: rgba(139, 148, 158, 0.1);
+    color: var(--muted);
+}
+
+.badge.service {
+    background: rgba(56, 139, 253, 0.12);
+    color: var(--accent);
+}
+
+.footerRight {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.port {
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-family: ui-monospace, 'Cascadia Code', monospace;
+}
+
+.healthDot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.healthDot.healthUp {
+    background: var(--success);
+    box-shadow: 0 0 5px rgba(63, 185, 80, 0.6);
+}
+
+.healthDot.healthDown {
+    background: #ff0000;
+    box-shadow: 0 0 5px rgba(248, 81, 73, 0.6);
+}
+
+.healthDot.healthUnknown {
+    background: var(--muted);
+    opacity: 0.4;
+}
