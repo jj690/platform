@@ -18,7 +18,7 @@ class SQLHandler:
                 contact_person TEXT,
                 contact_email TEXT,
                 short_summary TEXT,
-                confidence REAL,
+                confidence TEXT,
                 date TEXT
             )
             """)
@@ -58,38 +58,91 @@ class SQLHandler:
                 for row in rows
             ],
         }
-
-    def save_changes(self, df: list[dict]):
+    def save_changes(self, rows: list[dict]):
         self.create_table()
-        cursor = self.db_connection.cursor()
 
-        incoming_ids = []
-        for row in df:
-            row_id = row.get("id")
-            if row_id is None:
-                continue
+        with self.db_connection.cursor() as cursor:
+            incoming_ids = []
 
-            incoming_ids.append(row_id)
-            cursor.execute(
-                "UPDATE emails SET company_name=%s, job_title=%s, reference_number=%s, update_type=%s, contact_person=%s, contact_email=%s, short_summary=%s, confidence=%s, date=%s WHERE id=%s",
-                (
+            for row in rows:
+                row_id = row.get("id")
+
+                values = (
                     row["company_name"],
-                    row["job_title"],
-                    row["reference_number"],
+                    row.get("job_title"),
+                    row.get("reference_number"),
                     row["update_type"],
-                    row["contact_person"],
-                    row["contact_email"],
-                    row["short_summary"],
-                    row["confidence"],
-                    row["date"],
-                    row_id,
-                ),
-            )
+                    row.get("contact_person"),
+                    row.get("contact_email"),
+                    row.get("short_summary"),
+                    row.get("confidence"),
+                    row.get("date"),
+                )
 
-        if incoming_ids:
-            placeholders = ", ".join(["%s"] * len(incoming_ids))
-            cursor.execute(f"DELETE FROM emails WHERE id NOT IN ({placeholders})", incoming_ids)
-        else:
-            cursor.execute("DELETE FROM emails")
+                if row_id is None:
+                    cursor.execute(
+                        """
+                        INSERT INTO emails (
+                            company_name,
+                            job_title,
+                            reference_number,
+                            update_type,
+                            contact_person,
+                            contact_email,
+                            short_summary,
+                            confidence,
+                            date
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        RETURNING id
+                        """,
+                        values,
+                    )
+
+                    new_id = cursor.fetchone()[0]
+                    incoming_ids.append(new_id)
+
+                    row["id"] = new_id
+
+                else:
+                    cursor.execute(
+                        """
+                        INSERT INTO emails (
+                            id,
+                            company_name,
+                            job_title,
+                            reference_number,
+                            update_type,
+                            contact_person,
+                            contact_email,
+                            short_summary,
+                            confidence,
+                            date
+                        )
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (id)
+                        DO UPDATE SET
+                            company_name = EXCLUDED.company_name,
+                            job_title = EXCLUDED.job_title,
+                            reference_number = EXCLUDED.reference_number,
+                            update_type = EXCLUDED.update_type,
+                            contact_person = EXCLUDED.contact_person,
+                            contact_email = EXCLUDED.contact_email,
+                            short_summary = EXCLUDED.short_summary,
+                            confidence = EXCLUDED.confidence,
+                            date = EXCLUDED.date
+                        """,
+                        (row_id,) + values,
+                    )
+
+                    incoming_ids.append(row_id)
+
+            if incoming_ids:
+                cursor.execute(
+                    "DELETE FROM emails WHERE NOT (id = ANY(%s))",
+                    (incoming_ids,),
+                )
+            else:
+                cursor.execute("DELETE FROM emails")
 
         self.db_connection.commit()
