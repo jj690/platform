@@ -53,96 +53,111 @@ class SQLHandler:
 
         return {
             "columns": column_names,
-            "rows": [
-                dict(zip(column_names, row))
-                for row in rows
-            ],
+            "rows": [dict(zip(column_names, row)) for row in rows],
         }
-    def save_changes(self, rows: list[dict]):
+    def save_changes(self, rows: list[dict]) -> list[dict]:
         self.create_table()
 
-        with self.db_connection.cursor() as cursor:
-            incoming_ids = []
+        try:
+            with self.db_connection.cursor() as cursor:
+                incoming_ids: list[int] = []
 
-            for row in rows:
-                row_id = row.get("id")
+                for row in rows:
+                    row_id = row.get("id")
 
-                values = (
-                    row["company_name"],
-                    row.get("job_title"),
-                    row.get("reference_number"),
-                    row["update_type"],
-                    row.get("contact_person"),
-                    row.get("contact_email"),
-                    row.get("short_summary"),
-                    row.get("confidence"),
-                    row.get("date"),
-                )
+                    try:
+                        row_id = int(row_id) 
+                    except:
+                        row_id = None
 
-                if row_id is None:
-                    cursor.execute(
-                        """
-                        INSERT INTO emails (
-                            company_name,
-                            job_title,
-                            reference_number,
-                            update_type,
-                            contact_person,
-                            contact_email,
-                            short_summary,
-                            confidence,
-                            date
-                        )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        RETURNING id
-                        """,
-                        values,
+                    values = (
+                        row["company_name"],
+                        row.get("job_title"),
+                        row.get("reference_number"),
+                        row["update_type"],
+                        row.get("contact_person"),
+                        row.get("contact_email"),
+                        row.get("short_summary"),
+                        row.get("confidence"),
+                        row.get("date"),
                     )
 
-                    new_id = cursor.fetchone()[0]
-                    incoming_ids.append(new_id)
+                    saved_id = None
 
-                    row["id"] = new_id
+                    if row_id is not None:
+                        cursor.execute(
+                            """
+                            UPDATE emails
+                            SET
+                                company_name = %s,
+                                job_title = %s,
+                                reference_number = %s,
+                                update_type = %s,
+                                contact_person = %s,
+                                contact_email = %s,
+                                short_summary = %s,
+                                confidence = %s,
+                                date = %s
+                            WHERE id = %s
+                            RETURNING id
+                            """,
+                            values + (row_id,),
+                        )
 
+                        result = cursor.fetchone()
+
+                        if result is not None:
+                            saved_id = result[0]
+
+                    if saved_id is None:
+                        cursor.execute(
+                            """
+                            INSERT INTO emails (
+                                company_name,
+                                job_title,
+                                reference_number,
+                                update_type,
+                                contact_person,
+                                contact_email,
+                                short_summary,
+                                confidence,
+                                date
+                            )
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            RETURNING id
+                            """,
+                            values,
+                        )
+
+                        result = cursor.fetchone()
+
+                        if result is None:
+                            raise RuntimeError(
+                                "Der Datensatz konnte nicht gespeichert werden."
+                            )
+
+                        saved_id = result[0]
+
+                    # Eventuell falsche/fehlende ID durch echte DB-ID ersetzen
+                    row["id"] = saved_id
+                    incoming_ids.append(saved_id)
+
+                # Datensätze löschen, die in der vollständigen Tabelle
+                # nicht mehr enthalten sind
+                if incoming_ids:
+                    cursor.execute(
+                        """
+                        DELETE FROM emails
+                        WHERE id <> ALL(%s)
+                        """,
+                        (incoming_ids,),
+                    )
                 else:
-                    cursor.execute(
-                        """
-                        INSERT INTO emails (
-                            id,
-                            company_name,
-                            job_title,
-                            reference_number,
-                            update_type,
-                            contact_person,
-                            contact_email,
-                            short_summary,
-                            confidence,
-                            date
-                        )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        ON CONFLICT (id)
-                        DO UPDATE SET
-                            company_name = EXCLUDED.company_name,
-                            job_title = EXCLUDED.job_title,
-                            reference_number = EXCLUDED.reference_number,
-                            update_type = EXCLUDED.update_type,
-                            contact_person = EXCLUDED.contact_person,
-                            contact_email = EXCLUDED.contact_email,
-                            short_summary = EXCLUDED.short_summary,
-                            confidence = EXCLUDED.confidence,
-                            date = EXCLUDED.date
-                        """,
-                        (row_id,) + values,
-                    )
+                    cursor.execute("DELETE FROM emails")
 
-                    incoming_ids.append(row_id)
+            self.db_connection.commit()
+            return rows
 
-            if incoming_ids:
-                cursor.execute(
-                    "DELETE FROM emails WHERE NOT (id = ANY(%s))",
-                    (incoming_ids,),
-                )
-            else:
-                cursor.execute("DELETE FROM emails")
-
-        self.db_connection.commit()
+        except Exception:
+            self.db_connection.rollback()
+            raise
