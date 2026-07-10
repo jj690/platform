@@ -1,0 +1,126 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "postProcessAction": "nothing",
+        "options": {
+          "forceReconnect": 30,
+          "trackLastMessageId": false
+        }
+      },
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [
+        128,
+        480
+      ],
+      "id": "f3b4cdbc-7c73-427c-91d1-2bd05e1a8131",
+      "name": "jonahrivera2000 (IMAP)",
+      "credentials": {
+        "imap": {
+          "id": "2TpM7E7iOvWFpN5b",
+          "name": "IMAP account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://at-backend:8000/api/classify_email",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "sender",
+              "value": "={{ $json.from }}"
+            },
+            {
+              "name": "subject",
+              "value": "={{ $json.subject }}"
+            },
+            {
+              "name": "body",
+              "value": "={{ $json.textPlain }}"
+            },
+            {
+              "name": "date",
+              "value": "={{ DateTime.fromRFC2822($json.date).toISO() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        352,
+        384
+      ],
+      "id": "d2415126-321d-41d6-9cc4-c822a7ac8cc5",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "postProcessAction": "nothing",
+        "options": {
+          "forceReconnect": 30,
+          "trackLastMessageId": false
+        }
+      },
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [
+        128,
+        288
+      ],
+      "id": "471fdb2e-e542-46f5-9d1d-1d1092ac138a",
+      "name": "jonahrivera5000 (IMAP)",
+      "credentials": {
+        "imap": {
+          "id": "qae264pCAB1Vdp0k",
+          "name": "IMAP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "jonahrivera2000 (IMAP)": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "jonahrivera5000 (IMAP)": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "bd4807af-f314-4ebc-936b-2f04c17db082",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "24ac70684d86451587ecf236a873af5a97f7993058e79195a6d5041cf9ed02ed"
+  },
+  "nodeGroups": [],
+  "id": "Nw4ge4xy2TQidKGA",
+  "tags": []
+}

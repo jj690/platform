@@ -11,6 +11,8 @@ with st.sidebar:
     edit = st.checkbox("Edit Mode")
     if edit:
         age = None  # Disable age filter in edit mode
+        file = st.file_uploader("Upload CSV", type=["csv"], key="csv_upload")
+        df = pd.read_csv(file) if file is not None else pd.DataFrame()
     else:
         age = st.slider("Maximum age of emails (days)", min_value=0, max_value=365, value=30, key="max_age")
 

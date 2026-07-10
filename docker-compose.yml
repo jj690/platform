@@ -13,7 +13,6 @@ x-healthcheck-defaults: &healthcheck-defaults
   timeout: ${HEALTHCHECK_TIMEOUT}
   retries: ${HEALTHCHECK_RETRIES}
 
-
 services:
   traefik:
     <<: *service-defaults
@@ -44,15 +43,13 @@ services:
       <<: *traefik-labels
 
       traefik.http.routers.traefik.rule: >-
-        Path(`${TRAEFIK_PATH}`) ||
-        PathPrefix(`${TRAEFIK_PATH}/`)
+        Path(`${TRAEFIK_PATH}`) || PathPrefix(`${TRAEFIK_PATH}/`)
       traefik.http.routers.traefik.entrypoints: web
       traefik.http.routers.traefik.service: api@internal
       traefik.http.routers.traefik.priority: "${PRIORITY_TRAEFIK}"
 
     networks:
       - proxy
-
 
   n8n:
     <<: *service-defaults
@@ -86,8 +83,7 @@ services:
       <<: *traefik-labels
 
       traefik.http.routers.n8n.rule: >-
-        Path(`${N8N_PATH}`) ||
-        PathPrefix(`${N8N_PATH}/`)
+        Path(`${N8N_PATH}`) || PathPrefix(`${N8N_PATH}/`)
       traefik.http.routers.n8n.entrypoints: web
       traefik.http.routers.n8n.priority: "${PRIORITY_DEFAULT}"
 
@@ -98,7 +94,6 @@ services:
 
     networks:
       - proxy
-
 
   healthcheck:
     <<: *service-defaults
@@ -123,8 +118,7 @@ services:
       <<: *traefik-labels
 
       traefik.http.routers.healthcheck.rule: >-
-        Path(`${HEALTH_PATH}`) ||
-        PathPrefix(`${HEALTH_PATH}/`)
+        Path(`${HEALTH_PATH}`) || PathPrefix(`${HEALTH_PATH}/`)
       traefik.http.routers.healthcheck.entrypoints: web
       traefik.http.routers.healthcheck.priority: "${PRIORITY_HEALTH}"
 
@@ -133,10 +127,8 @@ services:
     networks:
       - proxy
 
-
   at-backend:
     <<: *service-defaults
-
     build:
       context: ./apps/application-tracker/backend
 
@@ -174,10 +166,7 @@ services:
         - python
         - -c
         - >-
-          import urllib.request;
-          urllib.request.urlopen(
-          'http://localhost:${TRACKER_API_PORT}/health'
-          )
+          import urllib.request; urllib.request.urlopen( 'http://localhost:${TRACKER_API_PORT}/health' )
 
       start_period: 10s
 
@@ -185,8 +174,7 @@ services:
       <<: *traefik-labels
 
       traefik.http.routers.at-backend.rule: >-
-        Path(`${TRACKER_API_PATH}`) ||
-        PathPrefix(`${TRACKER_API_PATH}/`)
+        Path(`${TRACKER_API_PATH}`) || PathPrefix(`${TRACKER_API_PATH}/`)
       traefik.http.routers.at-backend.entrypoints: web
       traefik.http.routers.at-backend.priority: "${PRIORITY_API}"
 
@@ -198,7 +186,6 @@ services:
     networks:
       - proxy
       - database
-
 
   at-frontend:
     <<: *service-defaults
@@ -237,10 +224,7 @@ services:
         - python
         - -c
         - >-
-          import urllib.request;
-          urllib.request.urlopen(
-          'http://localhost:${TRACKER_FRONTEND_PORT}${TRACKER_PATH}/_stcore/health'
-          )
+          import urllib.request; urllib.request.urlopen( 'http://localhost:${TRACKER_FRONTEND_PORT}${TRACKER_PATH}/_stcore/health' )
 
       start_period: 15s
 
@@ -248,8 +232,7 @@ services:
       <<: *traefik-labels
 
       traefik.http.routers.at-frontend.rule: >-
-        Path(`${TRACKER_PATH}`) ||
-        PathPrefix(`${TRACKER_PATH}/`)
+        Path(`${TRACKER_PATH}`) || PathPrefix(`${TRACKER_PATH}/`)
       traefik.http.routers.at-frontend.entrypoints: web
       traefik.http.routers.at-frontend.priority: "${PRIORITY_DEFAULT}"
 
@@ -257,7 +240,6 @@ services:
 
     networks:
       - proxy
-
 
   postgres:
     <<: *service-defaults
@@ -283,7 +265,6 @@ services:
 
     networks:
       - database
-
 
   portal:
     <<: *service-defaults
@@ -315,7 +296,6 @@ services:
     networks:
       - proxy
 
-
   adminer:
     <<: *service-defaults
 
@@ -332,8 +312,7 @@ services:
       <<: *traefik-labels
 
       traefik.http.routers.adminer.rule: >-
-        Path(`${ADMINER_PATH}`) ||
-        PathPrefix(`${ADMINER_PATH}/`)
+        Path(`${ADMINER_PATH}`) || PathPrefix(`${ADMINER_PATH}/`)
       traefik.http.routers.adminer.entrypoints: web
       traefik.http.routers.adminer.priority: "${PRIORITY_DEFAULT}"
 
@@ -353,11 +332,9 @@ services:
       - proxy
       - database
 
-
 volumes:
   n8n_data:
   postgres_data:
-
 
 networks:
   proxy:
