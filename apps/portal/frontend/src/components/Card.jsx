@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import styles from './Card.module.css'
 
 const BADGE_LABEL = { active: 'Active', soon: 'Coming Soon', service: 'Service' }
-const HEALTH_BASE = (window.__env__ || {}).HEALTHCHECK_URL || '/health'
+const HEALTH_BASE = (window.__env__ || {}).HEALTHCHECK_URL
 
 export function Card({ name, description, href, port, image, color, status, healthCheckId }) {
     const isPlaceholder = status === 'soon'
@@ -13,7 +13,7 @@ export function Card({ name, description, href, port, image, color, status, heal
 
         const check = async () => {
             try {
-                const res = await fetch(`${HEALTH_BASE}/services/${healthCheckId}`)
+                const res = await fetch(`${HEALTH_BASE}/${healthCheckId}`)
                 if (!res.ok) { setHealthy(false); return }
                 const data = await res.json()
                 setHealthy(data[healthCheckId]?.status === 'healthy')
@@ -23,7 +23,7 @@ export function Card({ name, description, href, port, image, color, status, heal
         }
 
         check()
-        const intervalId = setInterval(check, 30_000)
+        const intervalId = setInterval(check, 3_000)
         return () => clearInterval(intervalId)
     }, [healthCheckId])
 

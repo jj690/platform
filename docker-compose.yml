@@ -8,10 +8,6 @@ x-traefik-labels: &traefik-labels
   traefik.enable: "true"
   traefik.docker.network: "${PROXY_NETWORK}"
 
-x-healthcheck-defaults: &healthcheck-defaults
-  interval: ${HEALTHCHECK_INTERVAL}
-  timeout: ${HEALTHCHECK_TIMEOUT}
-  retries: ${HEALTHCHECK_RETRIES}
 
 services:
   traefik:
@@ -24,6 +20,7 @@ services:
       - "--api.basepath=${TRAEFIK_PATH}"
 
       - "--providers.docker=true"
+      - "--providers.docker.allowEmptyServices=true"
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=${PROXY_NETWORK}"
 
@@ -42,8 +39,7 @@ services:
     labels:
       <<: *traefik-labels
 
-      traefik.http.routers.traefik.rule: >-
-        Path(`${TRAEFIK_PATH}`) || PathPrefix(`${TRAEFIK_PATH}/`)
+      traefik.http.routers.traefik.rule: Path(`${TRAEFIK_PATH}`) || PathPrefix(`${TRAEFIK_PATH}/`)
       traefik.http.routers.traefik.entrypoints: web
       traefik.http.routers.traefik.service: api@internal
       traefik.http.routers.traefik.priority: "${PRIORITY_TRAEFIK}"
@@ -76,14 +72,12 @@ services:
       - n8n_data:/home/node/.n8n
 
     depends_on:
-      at-backend:
-        condition: service_healthy
+      - at-backend
 
     labels:
       <<: *traefik-labels
 
-      traefik.http.routers.n8n.rule: >-
-        Path(`${N8N_PATH}`) || PathPrefix(`${N8N_PATH}/`)
+      traefik.http.routers.n8n.rule: Path(`${N8N_PATH}`) || PathPrefix(`${N8N_PATH}/`)
       traefik.http.routers.n8n.entrypoints: web
       traefik.http.routers.n8n.priority: "${PRIORITY_DEFAULT}"
 
@@ -102,17 +96,13 @@ services:
       context: ./infra/healthcheck/backend
 
     environment:
-      N8N_HEALTH_URL: >-
-        http://n8n:${N8N_PORT}/healthz/readiness
-      TRACKER_API_HEALTH_URL: >-
-        http://at-backend:${TRACKER_API_PORT}/health
+      N8N_HEALTH_URL: http://n8n:${N8N_PORT}/healthz/readiness
+      TRACKER_API_HEALTH_URL: http://at-backend:${TRACKER_API_PORT}/health
       ADMINER_HEALTH_URL: http://adminer:8080/
-      TRAEFIK_HEALTH_URL: >-
-        http://traefik:${TRAEFIK_HEALTH_PORT}/ping
-
+      TRAEFIK_HEALTH_URL: http://traefik:${TRAEFIK_HEALTH_PORT}/ping
+      API_URL: ${SERVICES_HEALTH_PATH}
     depends_on:
-      traefik:
-        condition: service_started
+      - traefik
 
     labels:
       <<: *traefik-labels
@@ -138,8 +128,7 @@ services:
         postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB_APPLICATION_TRACKER}
 
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
 
     volumes:
       - ./apps/application-tracker/backend/app:/app/app
@@ -157,18 +146,6 @@ services:
       - "*"
       - --root-path
       - "${TRACKER_API_PATH}"
-
-    healthcheck:
-      <<: *healthcheck-defaults
-
-      test:
-        - CMD
-        - python
-        - -c
-        - >-
-          import urllib.request; urllib.request.urlopen( 'http://localhost:${TRACKER_API_PORT}/health' )
-
-      start_period: 10s
 
     labels:
       <<: *traefik-labels
@@ -193,46 +170,22 @@ services:
     build:
       context: ./apps/application-tracker/frontend
 
-    entrypoint:
-      - streamlit
-      - run
-
-    command:
-      - /app/main.py
-      - --server.address=0.0.0.0
-      - "--server.port=${TRACKER_FRONTEND_PORT}"
-      - --server.headless=true
-      - "--server.baseUrlPath=${STREAMLIT_BASE_PATH}"
-      - "--browser.serverAddress=${PLATFORM_HOST}"
-      - "--browser.serverPort=${PLATFORM_HTTP_PORT}"
-
     environment:
-      API_URL: http://at-backend:${TRACKER_API_PORT}
+      API_URL: "http://at-backend:${TRACKER_API_PORT}"
+
+      # Required by docker-entrypoint.sh
+      TRACKER_FRONTEND_PORT: "${TRACKER_FRONTEND_PORT}"
+      STREAMLIT_BASE_PATH: "${STREAMLIT_BASE_PATH}"
+      PLATFORM_HOST: "${PLATFORM_HOST}"
+      PLATFORM_HTTP_PORT: "${PLATFORM_HTTP_PORT}"
 
     volumes:
       - ./apps/application-tracker/frontend/src:/app
 
-    depends_on:
-      at-backend:
-        condition: service_healthy
-
-    healthcheck:
-      <<: *healthcheck-defaults
-
-      test:
-        - CMD
-        - python
-        - -c
-        - >-
-          import urllib.request; urllib.request.urlopen( 'http://localhost:${TRACKER_FRONTEND_PORT}${TRACKER_PATH}/_stcore/health' )
-
-      start_period: 15s
-
     labels:
       <<: *traefik-labels
 
-      traefik.http.routers.at-frontend.rule: >-
-        Path(`${TRACKER_PATH}`) || PathPrefix(`${TRACKER_PATH}/`)
+      traefik.http.routers.at-frontend.rule: "Path(`${TRACKER_PATH}`) || PathPrefix(`${TRACKER_PATH}/`)"
       traefik.http.routers.at-frontend.entrypoints: web
       traefik.http.routers.at-frontend.priority: "${PRIORITY_DEFAULT}"
 
@@ -251,18 +204,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-    healthcheck:
-      <<: *healthcheck-defaults
-
-      test:
-        - CMD-SHELL
-        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
-
-      start_period: 10s
-
     networks:
       - database
 
@@ -276,12 +217,11 @@ services:
       PLATFORM_PROTOCOL: ${PLATFORM_PROTOCOL}
       PLATFORM_HOST: ${PLATFORM_HOST}
 
-      PORTAL_PATH: ${PORTAL_PATH}
       N8N_PATH: ${N8N_PATH}
       TRACKER_PATH: ${TRACKER_PATH}
-      TRACKER_API_PATH: ${TRACKER_API_PATH}
       ADMINER_PATH: ${ADMINER_PATH}
       TRAEFIK_PATH: ${TRAEFIK_PATH}
+      SERVICES_HEALTH_PATH: ${SERVICES_HEALTH_PATH}
 
     labels:
       <<: *traefik-labels
@@ -305,8 +245,7 @@ services:
       ADMINER_DEFAULT_SERVER: postgres
 
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
 
     labels:
       <<: *traefik-labels
