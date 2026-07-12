@@ -24,7 +24,22 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=${PROXY_NETWORK}"
 
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+
+      # HTTP
       - "--entrypoints.web.address=:${TRAEFIK_WEB_PORT}"
+
+      # Redirect every HTTP request to HTTPS
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+
+      # HTTPS
+      - "--entrypoints.websecure.address=:${TRAEFIK_WEB_SECURE_PORT}"
+      - "--entrypoints.websecure.http.tls=true"
+
+      # Internal health endpoint
       - "--entrypoints.health.address=:${TRAEFIK_HEALTH_PORT}"
 
       - "--ping=true"
@@ -32,15 +47,19 @@ services:
 
     ports:
       - "${PLATFORM_HTTP_PORT}:${TRAEFIK_WEB_PORT}"
+      - "${PLATFORM_HTTPS_PORT}:${TRAEFIK_WEB_SECURE_PORT}"
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - ./infra/traefik/dynamic:/etc/traefik/dynamic:ro
+      # - ./infra/traefik/certs:/etc/traefik/certs:ro
 
     labels:
       <<: *traefik-labels
 
-      traefik.http.routers.traefik.rule: Path(`${TRAEFIK_PATH}`) || PathPrefix(`${TRAEFIK_PATH}/`)
-      traefik.http.routers.traefik.entrypoints: web
+      traefik.http.routers.traefik.rule: >-
+        Path(`${TRAEFIK_PATH}`) || PathPrefix(`${TRAEFIK_PATH}/`)
+      traefik.http.routers.traefik.entrypoints: websecure
       traefik.http.routers.traefik.service: api@internal
       traefik.http.routers.traefik.priority: "${PRIORITY_TRAEFIK}"
 
@@ -78,7 +97,7 @@ services:
       <<: *traefik-labels
 
       traefik.http.routers.n8n.rule: Path(`${N8N_PATH}`) || PathPrefix(`${N8N_PATH}/`)
-      traefik.http.routers.n8n.entrypoints: web
+      traefik.http.routers.n8n.entrypoints: websecure
       traefik.http.routers.n8n.priority: "${PRIORITY_DEFAULT}"
 
       traefik.http.routers.n8n.middlewares: n8n-strip
@@ -109,7 +128,7 @@ services:
 
       traefik.http.routers.healthcheck.rule: >-
         Path(`${HEALTH_PATH}`) || PathPrefix(`${HEALTH_PATH}/`)
-      traefik.http.routers.healthcheck.entrypoints: web
+      traefik.http.routers.healthcheck.entrypoints: websecure
       traefik.http.routers.healthcheck.priority: "${PRIORITY_HEALTH}"
 
       traefik.http.services.healthcheck.loadbalancer.server.port: "8000"
@@ -152,7 +171,7 @@ services:
 
       traefik.http.routers.at-backend.rule: >-
         Path(`${TRACKER_API_PATH}`) || PathPrefix(`${TRACKER_API_PATH}/`)
-      traefik.http.routers.at-backend.entrypoints: web
+      traefik.http.routers.at-backend.entrypoints: websecure
       traefik.http.routers.at-backend.priority: "${PRIORITY_API}"
 
       traefik.http.routers.at-backend.middlewares: at-backend-strip
@@ -186,7 +205,7 @@ services:
       <<: *traefik-labels
 
       traefik.http.routers.at-frontend.rule: "Path(`${TRACKER_PATH}`) || PathPrefix(`${TRACKER_PATH}/`)"
-      traefik.http.routers.at-frontend.entrypoints: web
+      traefik.http.routers.at-frontend.entrypoints: websecure
       traefik.http.routers.at-frontend.priority: "${PRIORITY_DEFAULT}"
 
       traefik.http.services.at-frontend.loadbalancer.server.port: "${TRACKER_FRONTEND_PORT}"
@@ -228,7 +247,7 @@ services:
 
       # PathPrefix("/") already matches the root and every other path.
       traefik.http.routers.portal.rule: "PathPrefix(`/`)"
-      traefik.http.routers.portal.entrypoints: web
+      traefik.http.routers.portal.entrypoints: websecure
       traefik.http.routers.portal.priority: "${PRIORITY_PORTAL}"
 
       traefik.http.services.portal.loadbalancer.server.port: "80"
@@ -252,7 +271,7 @@ services:
 
       traefik.http.routers.adminer.rule: >-
         Path(`${ADMINER_PATH}`) || PathPrefix(`${ADMINER_PATH}/`)
-      traefik.http.routers.adminer.entrypoints: web
+      traefik.http.routers.adminer.entrypoints: websecure
       traefik.http.routers.adminer.priority: "${PRIORITY_DEFAULT}"
 
       traefik.http.routers.adminer.middlewares: >-
