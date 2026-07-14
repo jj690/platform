@@ -149,8 +149,8 @@ services:
     depends_on:
       - postgres
 
-    volumes:
-      - ./apps/application-tracker/backend/app:/app/app
+    # volumes:
+    #   - ./apps/application-tracker/backend/app:/app/app
 
     command:
       - uvicorn
@@ -198,8 +198,8 @@ services:
       PLATFORM_HOST: "${PLATFORM_HOST}"
       PLATFORM_HTTP_PORT: "${PLATFORM_HTTP_PORT}"
 
-    volumes:
-      - ./apps/application-tracker/frontend/src:/app
+    # volumes:
+    #   - ./apps/application-tracker/frontend/src:/app
 
     labels:
       <<: *traefik-labels
@@ -217,6 +217,9 @@ services:
     <<: *service-defaults
 
     image: ${POSTGRES_IMAGE}
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
     environment:
       POSTGRES_DB: ${POSTGRES_DB_APPLICATION_TRACKER}
